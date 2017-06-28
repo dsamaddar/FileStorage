@@ -1,0 +1,38 @@
+/* comment section first create a table to keep track of Insert, Delete, Update
+create table Emp_Audit(
+                    EmpID int,
+                    Activity varchar(20),
+                    DoneBy varchar(50),
+                    Date_Time datetime NOT NULL DEFAULT GETDATE()
+                   );
+
+select * from Emp_Audit*/
+
+create trigger Employee_trigger
+on Employees
+after UPDATE, INSERT, DELETE
+as
+declare @EmpID int,@user varchar(20), @activity varchar(20);
+if exists(SELECT * from inserted) and exists (SELECT * from deleted)
+begin
+    SET @activity = 'UPDATE';
+    SET @user = SYSTEM_USER;
+    SELECT @EmpID = EmployeeID from inserted i;
+    INSERT into Emp_Audit(EmpID,Activity, DoneBy) values (@EmpID,@activity,@user);
+end
+
+If exists (Select * from inserted) and not exists(Select * from deleted)
+begin
+    SET @activity = 'INSERT';
+    SET @user = SYSTEM_USER;
+    SELECT @EmpID = EmployeeID from inserted i;
+    INSERT into Emp_Audit(EmpID,Activity, DoneBy) values(@EmpID,@activity,@user);
+end
+
+If exists(select * from deleted) and not exists(Select * from inserted)
+begin 
+    SET @activity = 'DELETE';
+    SET @user = SYSTEM_USER;
+    SELECT @EmpID = EmployeeID from deleted i;
+    INSERT into Emp_Audit(EmpID,Activity, DoneBy) values(@EmpID,@activity,@user);
+end
